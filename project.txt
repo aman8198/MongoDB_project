@@ -1,0 +1,187 @@
+#1. first step is importing the dataset in mongo as database command for that
+C:\Program Files\MongoDB\Server\4.4\bin> mongoimport -d database2 -c scores --type csv --file acc.csv --headerline
+
+#2. next step is to start mongo shell
+C:\Program Files\MongoDB\Server\4.4\bin>mongo
+
+#3. checking whether we have the imported dataset as database in mongo
+> show dbs
+
+#4. now we will activate our database by
+> use database2
+
+#5. now we will check for collections 
+> show collections
+
+#6. checking the contents of database command as follows
+> db.scores.find().pretty()
+
+#7. performing aggregate operations
+
+#8. checking for gender number of genders 
+> db.scores.aggregate([{$group: {_id: "$Gender", result: {$sum: 1}}}])
+{ "_id" : "female", "result" : 120 }
+{ "_id" : "male", "result" : 159 }
+
+#9. checking for vehicle type number of entries
+> db.scores.aggregate([{$group: {_id: "$Vechile Type", result: {$sum: 1}}}])
+{ "_id" : "2 Wheeler", "result" : 121 }
+{ "_id" : "AutoRickshaw", "result" : 11 }
+{ "_id" : "Car", "result" : 44 }
+{ "_id" : "Bus", "result" : 11 }
+{ "_id" : "Truck", "result" : 17 }
+{ "_id" : "Bicycle", "result" : 6 }
+{ "_id" : "Pedestrian", "result" : 69 }
+
+#10. checking for the accident type number of entries
+> db.scores.aggregate([{$group: {_id: "$Accident Type", result: {$sum: 1}}}])
+{ "_id" : "Hit At Side", "result" : 20 }
+{ "_id" : "Hit And Run", "result" : 28 }
+{ "_id" : "Non wearing helmet", "result" : 50 }
+{ "_id" : "Seat Belt", "result" : 46 }
+{ "_id" : "Vechile Overturn", "result" : 26 }
+{ "_id" : "Head on Collision", "result" : 34 }
+{ "_id" : "Hit At Back", "result" : 27 }
+{ "_id" : "Drive on Wrong Side", "result" : 1 }
+{ "_id" : "Drink and Drive", "result" : 1 }
+{ "_id" : "Use mobile", "result" : 1 }
+{ "_id" : "OverSpeed", "result" : 45 }
+
+#11. checking for the Age group 
+> db.scores.aggregate([{$group: {_id: "$Age", result: {$sum: 1}}}])
+{ "_id" : 41, "result" : 5 }
+{ "_id" : 47, "result" : 3 }
+{ "_id" : 61, "result" : 1 }
+{ "_id" : 58, "result" : 1 }
+{ "_id" : 35, "result" : 4 }
+{ "_id" : 50, "result" : 5 }
+{ "_id" : 40, "result" : 7 }
+{ "_id" : 59, "result" : 2 }
+{ "_id" : 20, "result" : 11 }
+{ "_id" : 23, "result" : 12 }
+{ "_id" : 38, "result" : 7 }
+{ "_id" : 52, "result" : 2 }
+{ "_id" : 17, "result" : 5 }
+{ "_id" : 10, "result" : 1 }
+{ "_id" : 56, "result" : 1 }
+{ "_id" : 29, "result" : 7 }
+{ "_id" : 18, "result" : 11 }
+{ "_id" : 60, "result" : 2 }
+{ "_id" : 30, "result" : 7 }
+{ "_id" : 46, "result" : 2 }
+Type "it" for more
+
+#12. checking vehicle type and minimum types of accident which takes place from that vehicle
+> db.scores.aggregate([{$group: {_id: "$Vechile Type", Accidenttype: {$min: "$Accident Type"}}}])
+{ "_id" : "AutoRickshaw", "Accidenttype" : "Vechile Overturn" }
+{ "_id" : "Car", "Accidenttype" : "Drink and Drive" }
+{ "_id" : "Bus", "Accidenttype" : "OverSpeed" }
+{ "_id" : "Truck", "Accidenttype" : "Head on Collision" }
+{ "_id" : "Pedestrian", "Accidenttype" : "Hit And Run" }
+{ "_id" : "Bicycle", "Accidenttype" : "Hit At Side" }
+{ "_id" : "2 Wheeler", "Accidenttype" : "Drive on Wrong Side" }
+
+#13. checking vehicle type and maximum types of accident which takes place from that vehicle
+> db.scores.aggregate([{$group: {_id: "$Vechile Type", Accidenttype: {$max: "$Accident Type"}}}])
+{ "_id" : "Truck", "Accidenttype" : "Seat Belt" }
+{ "_id" : "Bus", "Accidenttype" : "Seat Belt" }
+{ "_id" : "Car", "Accidenttype" : "Vechile Overturn" }
+{ "_id" : "AutoRickshaw", "Accidenttype" : "Vechile Overturn" }
+{ "_id" : "2 Wheeler", "Accidenttype" : "Vechile Overturn" }
+{ "_id" : "Bicycle", "Accidenttype" : "Hit At Side" }
+{ "_id" : "Pedestrian", "Accidenttype" : "Hit At Side" }
+
+
+#13. single purpose aggregation operation
+#identifying distinct feature in Vehicle column 
+> db.scores.distinct("Vechile Type")
+[
+        "2 Wheeler",
+        "AutoRickshaw",
+        "Bicycle",
+        "Bus",
+        "Car",
+        "Pedestrian",
+        "Truck"
+]
+
+#identifying distinct feature in Accident column 
+> db.scores.distinct("Accident Type")
+[
+        "Drink and Drive",
+        "Drive on Wrong Side",
+        "Head on Collision",
+        "Hit And Run",
+        "Hit At Back",
+        "Hit At Side",
+        "Non wearing helmet",
+        "OverSpeed",
+        "Seat Belt",
+        "Use mobile",
+        "Vechile Overturn"
+]
+
+
+#MapReduce query
+> var mapFunction3 = function(){ emit(this.AccidentType, this.Age);};
+> var reduceFunction3 = function(keyAccidentType, valuesAge){return Array.sum(valuesAge);};
+> db.scores.mapReduce(mapFunction3, reduceFunction3, {out: "map_red2"})
+{ "result" : "map_red2", "ok" : 1 }
+> db.map_red2.find().pretty()
+{ "_id" : "Use mobile", "value" : 18 }
+{ "_id" : null, "value" : 8676 }
+{ "_id" : "Non wearing helmet", "value" : 1049 }
+{ "_id" : "Hit And Run", "value" : 568 }
+{ "_id" : "Head on Collision", "value" : 1186 }
+{ "_id" : "Seat Belt", "value" : 1146 }
+{ "_id" : "Hit At Side", "value" : 884 }
+{ "_id" : "Drive on Wrong Side", "value" : 20 }
+{ "_id" : "Hit At Back", "value" : 979 }
+{ "_id" : "OverSpeed", "value" : 1913 }
+{ "_id" : "Vechile Overturn", "value" : 898 }
+{ "_id" : "Drink and Drive", "value" : 15 }
+>
+
+
+#other queries
+> var mapFunction2 = function(){ emit(this.Name, this.Age);};
+> var reduceFunction2 = function(keyName, valuesAge){return Array.sum(valuesAge);};
+> db.scores.mapReduce(mapFunction2, reduceFunction2, {out: "map_red1"})
+{ "result" : "map_red1", "ok" : 1 }
+> db.map_red1.find().pretty()
+{ "_id" : "asha gowali", "value" : 32 }
+{ "_id" : "janaji hiranwar", "value" : 27 }
+{ "_id" : "puja bhatewara", "value" : 43 }
+{ "_id" : "vinayak gite", "value" : 44 }
+{ "_id" : "vilas desai", "value" : 44 }
+{ "_id" : "govind shinde", "value" : 19 }
+{ "_id" : "aditiya nazare", "value" : 6 }
+{ "_id" : "jethalala nathani", "value" : 16 }
+{ "_id" : "sopan shivtare", "value" : 23 }
+{ "_id" : "mangala joshi", "value" : 35 }
+{ "_id" : "shivaji shitole", "value" : 24 }
+{ "_id" : "amrita palkar", "value" : 37 }
+{ "_id" : "suhas bhide", "value" : 38 }
+{ "_id" : "sagar sadvekar", "value" : 55 }
+{ "_id" : "shivani jagtap", "value" : 59 }
+{ "_id" : "mangla deshmukh", "value" : 29 }
+{ "_id" : "sushma ekbote", "value" : 32 }
+{ "_id" : "sonali jagtap", "value" : 21 }
+{ "_id" : "arun tikar", "value" : 21 }
+{ "_id" : "devdas butala", "value" : 34 }
+Type "it" for more
+
+
+
+#
+> var mapFunction1 = function(){ emit(this.Gender, this.Age);};
+>
+> var reduceFunction1 = function(keyGender, valuesAge){return Array.sum(valuesAge);};
+>
+> db.scores.mapReduce(mapFunction1, reduceFunction1, {out: "map_reduce"})
+{ "result" : "map_reduce", "ok" : 1 }
+> db.map_reduce.find().pretty()
+{ "_id" : "female", "value" : 3846 }
+{ "_id" : "male", "value" : 4830 }
+
+
